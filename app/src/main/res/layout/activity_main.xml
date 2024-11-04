@@ -34,49 +34,59 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent">
 
+        <!-- Кнопка "Вставить кассету" -->
         <ImageButton
             android:id="@+id/imageButton1"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="?attr/selectableItemBackground"
+            android:background="@drawable/button_background"
             android:scaleType="fitCenter"
+            android:layout_margin="4dp"
             android:src="@drawable/insert" />
 
+        <!-- Кнопка "Пуск" -->
         <ImageButton
             android:id="@+id/imageButton2"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="?attr/selectableItemBackground"
+            android:background="@drawable/button_background"
             android:scaleType="fitCenter"
+            android:layout_margin="4dp"
             android:src="@drawable/play_button" />
 
+        <!-- Кнопка "Пауза" -->
         <ImageButton
             android:id="@+id/imageButton3"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="?attr/selectableItemBackground"
+            android:background="@drawable/button_background"
             android:scaleType="fitCenter"
+            android:layout_margin="4dp"
             android:src="@drawable/pause" />
 
+        <!-- Кнопка "Перемотать трек назад" -->
         <ImageButton
             android:id="@+id/imageButton4"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="?attr/selectableItemBackground"
+            android:background="@drawable/button_background"
             android:scaleType="fitCenter"
+            android:layout_margin="4dp"
             android:src="@drawable/rewind_button_left" />
 
+        <!-- Кнопка "Перемотать трек вперёд" -->
         <ImageButton
             android:id="@+id/imageButton5"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:background="?attr/selectableItemBackground"
+            android:background="@drawable/button_background"
             android:scaleType="fitCenter"
+            android:layout_margin="4dp"
             android:src="@drawable/rewind_button_right" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
