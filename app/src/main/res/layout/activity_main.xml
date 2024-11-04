@@ -8,19 +8,75 @@
 
     <!-- FrameLayout с кассетой в виде фонового изображения -->
     <FrameLayout
+        android:id="@+id/frameLayout"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="628:414"
-        app:layout_constraintWidth_min="314dp"
-        app:layout_constraintHeight_min="207dp"
+        android:background="@drawable/cassette"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintDimensionRatio="628:414"
         app:layout_constraintEnd_toEndOf="parent"
-        android:background="@drawable/cassette">
+        app:layout_constraintHeight_min="207dp"
+        app:layout_constraintHorizontal_bias="0.495"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintWidth_min="314dp" />
 
-        <!-- Дополнительно можно добавить внутреннее содержимое, если нужно -->
+    <!-- Горизонтальный LinearLayout для пяти кнопок -->
+    <LinearLayout
+        android:id="@+id/buttonLayout"
+        android:layout_width="572dp"
+        android:layout_height="96dp"
+        android:layout_margin="8dp"
+        android:background="@color/background_button"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
-    </FrameLayout>
+        <ImageButton
+            android:id="@+id/imageButton1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:scaleType="fitCenter"
+            android:src="@drawable/insert" />
 
+        <ImageButton
+            android:id="@+id/imageButton2"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:scaleType="fitCenter"
+            android:src="@drawable/play_button" />
+
+        <ImageButton
+            android:id="@+id/imageButton3"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:scaleType="fitCenter"
+            android:src="@drawable/pause" />
+
+        <ImageButton
+            android:id="@+id/imageButton4"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:scaleType="fitCenter"
+            android:src="@drawable/rewind_button_left" />
+
+        <ImageButton
+            android:id="@+id/imageButton5"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="?attr/selectableItemBackground"
+            android:scaleType="fitCenter"
+            android:src="@drawable/rewind_button_right" />
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
