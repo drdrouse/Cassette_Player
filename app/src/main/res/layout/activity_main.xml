@@ -36,7 +36,7 @@
 
         <!-- Кнопка "Вставить кассету" -->
         <ImageButton
-            android:id="@+id/imageButton1"
+            android:id="@+id/insert_button"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -47,7 +47,7 @@
 
         <!-- Кнопка "Пуск" -->
         <ImageButton
-            android:id="@+id/imageButton2"
+            android:id="@+id/play_button"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -58,7 +58,7 @@
 
         <!-- Кнопка "Пауза" -->
         <ImageButton
-            android:id="@+id/imageButton3"
+            android:id="@+id/pause_button"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -69,7 +69,7 @@
 
         <!-- Кнопка "Перемотать трек назад" -->
         <ImageButton
-            android:id="@+id/imageButton4"
+            android:id="@+id/rewind_back_button"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
@@ -80,7 +80,7 @@
 
         <!-- Кнопка "Перемотать трек вперёд" -->
         <ImageButton
-            android:id="@+id/imageButton5"
+            android:id="@+id/rewind_forward_button"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"

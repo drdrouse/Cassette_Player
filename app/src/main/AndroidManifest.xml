@@ -16,7 +16,8 @@
             android:name=".MainActivity"
             android:screenOrientation="landscape"
             android:exported="true"
-            android:theme="@style/Theme.Cassette_Player">
+            android:theme="@style/Theme.Cassette_Player"
+            tools:ignore="MissingClass">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

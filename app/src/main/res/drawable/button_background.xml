@@ -5,9 +5,9 @@
             <gradient
                 android:startColor="#BBBBBB"
                 android:endColor="#999999"
-                android:angle="270" /> <!-- Градиент при нажатии -->
-            <corners android:radius="8dp"/>
-            <padding android:left="5dp" android:top="5dp" android:right="5dp" android:bottom="5dp"/>
+                android:angle="270" />
+            <corners android:radius="8dp" />
+            <padding android:left="5dp" android:top="5dp" android:right="5dp" android:bottom="5dp" />
         </shape>
     </item>
 
