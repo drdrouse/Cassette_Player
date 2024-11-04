@@ -8,7 +8,7 @@
 
     <!-- FrameLayout с кассетой в виде фонового изображения -->
     <FrameLayout
-        android:id="@+id/frameLayout"
+        android:id="@+id/cassette_image"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:background="@drawable/cassette"
