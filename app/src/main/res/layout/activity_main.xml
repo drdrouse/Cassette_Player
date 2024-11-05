@@ -8,19 +8,85 @@
 
     <!-- FrameLayout с кассетой в виде фонового изображения -->
     <FrameLayout
+        android:id="@+id/cassette_image"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        app:layout_constraintDimensionRatio="628:414"
-        app:layout_constraintWidth_min="314dp"
-        app:layout_constraintHeight_min="207dp"
+        android:background="@drawable/cassette"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintDimensionRatio="628:414"
         app:layout_constraintEnd_toEndOf="parent"
-        android:background="@drawable/cassette">
+        app:layout_constraintHeight_min="207dp"
+        app:layout_constraintHorizontal_bias="0.495"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        app:layout_constraintWidth_min="314dp" />
 
-        <!-- Дополнительно можно добавить внутреннее содержимое, если нужно -->
+    <!-- Горизонтальный LinearLayout для пяти кнопок -->
+    <LinearLayout
+        android:id="@+id/buttonLayout"
+        android:layout_width="572dp"
+        android:layout_height="96dp"
+        android:layout_margin="8dp"
+        android:background="@color/background_button"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
 
-    </FrameLayout>
+        <!-- Кнопка "Вставить кассету" -->
+        <ImageButton
+            android:id="@+id/insert_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/button_background"
+            android:scaleType="fitCenter"
+            android:layout_margin="4dp"
+            android:src="@drawable/insert" />
 
+        <!-- Кнопка "Пуск" -->
+        <ImageButton
+            android:id="@+id/play_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/button_background"
+            android:scaleType="fitCenter"
+            android:layout_margin="4dp"
+            android:src="@drawable/play_button" />
+
+        <!-- Кнопка "Пауза" -->
+        <ImageButton
+            android:id="@+id/pause_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/button_background"
+            android:scaleType="fitCenter"
+            android:layout_margin="4dp"
+            android:src="@drawable/pause" />
+
+        <!-- Кнопка "Перемотать трек назад" -->
+        <ImageButton
+            android:id="@+id/rewind_back_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/button_background"
+            android:scaleType="fitCenter"
+            android:layout_margin="4dp"
+            android:src="@drawable/rewind_button_left" />
+
+        <!-- Кнопка "Перемотать трек вперёд" -->
+        <ImageButton
+            android:id="@+id/rewind_forward_button"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@drawable/button_background"
+            android:scaleType="fitCenter"
+            android:layout_margin="4dp"
+            android:src="@drawable/rewind_button_right" />
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
