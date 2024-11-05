@@ -12,18 +12,26 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Cassette_Player"
         tools:targetApi="31">
+
+        <!-- SplashActivity является стартовым экраном приложения -->
         <activity
-            android:name=".MainActivity"
-            android:screenOrientation="landscape"
+            android:name=".SplashActivity"
             android:exported="true"
-            android:theme="@style/Theme.Cassette_Player"
-            tools:ignore="MissingClass">
+            android:theme="@style/AppTheme.Splash">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- MainActivity больше не имеет фильтров MAIN и LAUNCHER -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:screenOrientation="landscape"
+            android:theme="@style/Theme.Cassette_Player"
+            tools:ignore="MissingClass" />
+
     </application>
 
 </manifest>
