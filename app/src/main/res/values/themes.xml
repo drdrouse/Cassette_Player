@@ -6,4 +6,8 @@
     </style>
 
     <style name="Theme.Cassette_Player" parent="Base.Theme.Cassette_Player" />
+    <!-- Тема для SplashActivity -->
+    <style name="AppTheme.Splash" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@color/black</item> <!-- Цвет фона Splash Screen -->
+    </style>
 </resources>
