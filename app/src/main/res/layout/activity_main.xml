@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:background="@color/metal">
 
+
     <!-- FrameLayout с кассетой в виде фонового изображения -->
     <FrameLayout
         android:id="@+id/cassette_image"
@@ -20,7 +21,22 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.0"
-        app:layout_constraintWidth_min="314dp" />
+        app:layout_constraintWidth_min="314dp" >
+
+        <TextView
+            android:id="@+id/cassette_label"
+            android:layout_width="435dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal|top"
+            android:layout_marginTop="20dp"
+            android:fontFamily="@font/black_ops_one"
+            android:padding="8dp"
+            android:text="No Song Selected"
+            android:textColor="@color/black"
+            android:textSize="28sp" />
+
+    </FrameLayout>
+
 
     <!-- Горизонтальный LinearLayout для пяти кнопок -->
     <LinearLayout
