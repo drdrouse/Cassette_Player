@@ -1,5 +1,7 @@
 package com.example.cassette_player
 
+import android.app.Activity
+import android.content.Intent
 import android.graphics.drawable.AnimationDrawable
 import android.media.MediaPlayer
 import android.os.Bundle
@@ -7,6 +9,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
@@ -16,7 +19,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var pauseSound: MediaPlayer
     private lateinit var rewindForwardSound: MediaPlayer
     private lateinit var rewindBackwardSound: MediaPlayer
-
     private lateinit var cassetteAnimation: AnimationDrawable
     private lateinit var cassetteImageView: FrameLayout
     private var isAnimationRunning = false
@@ -53,7 +55,8 @@ class MainActivity : AppCompatActivity() {
         cassetteAnimation = cassetteImageView.background as AnimationDrawable
 
         // Настройка событий для кнопок
-        findViewById<ImageButton>(R.id.insert_button).setOnClickListener { playSoundOnce(insertSound) }
+        findViewById<ImageButton>(R.id.insert_button).setOnClickListener { playSoundOnce(insertSound)
+            openSongSelectionActivity()}
         findViewById<ImageButton>(R.id.play_button).setOnClickListener {
             playSoundOnce(playSound)
             if (!isAnimationRunning) startCassetteAnimation() // Начать анимацию только если она не запущена
@@ -73,6 +76,11 @@ class MainActivity : AppCompatActivity() {
         rewindForwardButton.setOnTouchListener { _, event ->
             handleRewindForwardTouchEvent(event, rewindForwardSound, rewindForwardButton)
         }
+    }
+
+    private fun openSongSelectionActivity() {
+        val intent = Intent(this, SongSelectionActivity::class.java)
+        startActivityForResult(intent, REQUEST_CODE_SELECT_SONG)
     }
 
     // Проигрывание звука один раз
@@ -209,5 +217,24 @@ class MainActivity : AppCompatActivity() {
         if (::pauseSound.isInitialized) pauseSound.release()
         if (::rewindForwardSound.isInitialized) rewindForwardSound.release()
         if (::rewindBackwardSound.isInitialized) rewindBackwardSound.release()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CODE_SELECT_SONG && resultCode == Activity.RESULT_OK) {
+            val selectedSong = data?.getStringExtra("selected_song")
+            if (selectedSong != null) {
+                updateCassetteLabel(selectedSong) // Обновление текста с названием песни
+            }
+        }
+    }
+
+    private fun updateCassetteLabel(songTitle: String) {
+        val cassetteLabel = findViewById<TextView>(R.id.cassette_label)
+        cassetteLabel.text = songTitle
+    }
+
+    companion object {
+        private const val REQUEST_CODE_SELECT_SONG = 1
     }
 }
