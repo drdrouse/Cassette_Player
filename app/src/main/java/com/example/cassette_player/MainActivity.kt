@@ -2,14 +2,17 @@ package com.example.cassette_player
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.drawable.AnimationDrawable
 import android.media.MediaPlayer
+import android.os.Build
 import android.os.Bundle
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class MainActivity : AppCompatActivity() {
@@ -25,7 +28,7 @@ class MainActivity : AppCompatActivity() {
     private var isRewinding = false
     private var isFastForwarding = false
     private var currentFrame = 0 // Переменная для хранения текущего кадра анимации
-
+    private val REQUEST_CODE_READ_EXTERNAL_STORAGE = 1
     // Настройки скоростей анимации
     private val normalFrameDelay = 30L   // Ускоренная обычная скорость
     private val fastFrameDelay = 15L     // Более быстрая скорость для перемотки
@@ -33,7 +36,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
+        checkAndRequestPermissions()
         // Полноэкранный режим
         window.decorView.systemUiVisibility = (
                 View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -78,9 +81,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun checkAndRequestPermissions() {
+        // Проверяем версию Android
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val permissions = mutableListOf<String>()
+
+            // Разные разрешения для Android 13+ и более старых версий
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                permissions.add(android.Manifest.permission.READ_MEDIA_AUDIO)
+            } else {
+                permissions.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            }
+
+            // Проверяем, если какое-либо разрешение не предоставлено
+            if (permissions.any { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }) {
+                requestPermissions(permissions.toTypedArray(), REQUEST_CODE_READ_EXTERNAL_STORAGE)
+            } else {
+                openSongSelectionActivity()
+            }
+        } else {
+            // Для Android ниже M (6.0), разрешения даются при установке
+            openSongSelectionActivity()
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQUEST_CODE_READ_EXTERNAL_STORAGE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                openSongSelectionActivity()
+            } else {
+                Toast.makeText(this, "Разрешение на доступ к аудиофайлам не предоставлено", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     private fun openSongSelectionActivity() {
         val intent = Intent(this, SongSelectionActivity::class.java)
-        startActivityForResult(intent, REQUEST_CODE_SELECT_SONG)
+        startActivity(intent)
     }
 
     // Проигрывание звука один раз
