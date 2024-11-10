@@ -82,25 +82,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkAndRequestPermissions() {
-        // Проверяем версию Android
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val permissions = mutableListOf<String>()
-
-            // Разные разрешения для Android 13+ и более старых версий
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 permissions.add(android.Manifest.permission.READ_MEDIA_AUDIO)
             } else {
                 permissions.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
             }
 
-            // Проверяем, если какое-либо разрешение не предоставлено
+            // Проверяем разрешения
             if (permissions.any { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }) {
                 requestPermissions(permissions.toTypedArray(), REQUEST_CODE_READ_EXTERNAL_STORAGE)
-            } else {
-                openSongSelectionActivity()
             }
         } else {
             // Для Android ниже M (6.0), разрешения даются при установке
+            // Открытие активности для выбора песни без дополнительного запроса
             openSongSelectionActivity()
         }
     }
@@ -113,7 +109,8 @@ class MainActivity : AppCompatActivity() {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == REQUEST_CODE_READ_EXTERNAL_STORAGE) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                openSongSelectionActivity()
+                // Разрешение получено, теперь можно переходить к выбору песни
+                // Не открываем SongSelectionActivity автоматически, только по кнопке
             } else {
                 Toast.makeText(this, "Разрешение на доступ к аудиофайлам не предоставлено", Toast.LENGTH_SHORT).show()
             }
