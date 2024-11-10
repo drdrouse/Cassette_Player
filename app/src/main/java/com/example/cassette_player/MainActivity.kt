@@ -73,8 +73,8 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<ImageButton>(R.id.pause_button).setOnClickListener {
             playSoundOnce(pauseSound)
-            stopSong()
             stopCassetteAnimation()
+            stopSong()
         }
 
         // Обработка удержания для кнопок перемотки назад и вперёд
