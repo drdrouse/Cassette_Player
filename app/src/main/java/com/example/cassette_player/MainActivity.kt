@@ -7,6 +7,7 @@ import android.graphics.drawable.AnimationDrawable
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity() {
     private var isFastForwarding = false
     private var currentFrame = 0 // Переменная для хранения текущего кадра анимации
     private val REQUEST_CODE_READ_EXTERNAL_STORAGE = 1
+    private lateinit var mediaPlayer: MediaPlayer
     // Настройки скоростей анимации
     private val normalFrameDelay = 30L   // Ускоренная обычная скорость
     private val fastFrameDelay = 15L     // Более быстрая скорость для перемотки
@@ -261,9 +263,15 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_SELECT_SONG && resultCode == Activity.RESULT_OK) {
-            val selectedSong = data?.getStringExtra("selected_song")
-            if (selectedSong != null) {
-                updateCassetteLabel(selectedSong) // Обновление текста с названием песни
+            val songPath = data?.getStringExtra("song_path")
+            val songTitle = data?.getStringExtra("song_title")  // Получаем название песни
+
+            if (!songPath.isNullOrEmpty() && !songTitle.isNullOrEmpty()) {
+                Log.d("SongPath", "Received song path: $songPath")  // Проверка пути
+                updateCassetteLabel(songTitle)  // Обновляем название на кассете
+                playSong(songPath) // Передаем путь для воспроизведения
+            } else {
+                Toast.makeText(this, "Путь к файлу или название не найдено", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -275,5 +283,24 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_CODE_SELECT_SONG = 1
+    }
+
+    private fun playSong(songPath: String) {
+        try {
+            if (::mediaPlayer.isInitialized) {
+                mediaPlayer.reset() // Сбрасываем предыдущий MediaPlayer
+            } else {
+                mediaPlayer = MediaPlayer()
+            }
+
+            mediaPlayer.setDataSource(songPath)
+            mediaPlayer.prepare()
+            mediaPlayer.start()
+
+            startCassetteAnimation() // Запускаем анимацию кассеты при воспроизведении
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Ошибка при воспроизведении песни", Toast.LENGTH_SHORT).show()
+        }
     }
 }
