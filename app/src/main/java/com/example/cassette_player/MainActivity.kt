@@ -31,6 +31,8 @@ class MainActivity : AppCompatActivity() {
     private var currentFrame = 0 // Переменная для хранения текущего кадра анимации
     private val REQUEST_CODE_READ_EXTERNAL_STORAGE = 1
     private lateinit var mediaPlayer: MediaPlayer
+    private var currentSongPath: String? = null
+    private var currentSongTitle: String? = null
     // Настройки скоростей анимации
     private val normalFrameDelay = 30L   // Ускоренная обычная скорость
     private val fastFrameDelay = 15L     // Более быстрая скорость для перемотки
@@ -64,7 +66,10 @@ class MainActivity : AppCompatActivity() {
             openSongSelectionActivity()}
         findViewById<ImageButton>(R.id.play_button).setOnClickListener {
             playSoundOnce(playSound)
-            if (!isAnimationRunning) startCassetteAnimation() // Начать анимацию только если она не запущена
+            if (!isAnimationRunning && currentSongPath != null) {
+                playSong(currentSongPath!!)  // Начинаем воспроизведение только если путь к песне выбран
+            }
+            if (!isAnimationRunning) startCassetteAnimation()
         }
         findViewById<ImageButton>(R.id.pause_button).setOnClickListener {
             playSoundOnce(pauseSound)
@@ -267,9 +272,10 @@ class MainActivity : AppCompatActivity() {
             val songTitle = data?.getStringExtra("song_title")  // Получаем название песни
 
             if (!songPath.isNullOrEmpty() && !songTitle.isNullOrEmpty()) {
-                Log.d("SongPath", "Received song path: $songPath")  // Проверка пути
+                // Сохраняем путь к песне, но не начинаем воспроизведение
+                currentSongPath = songPath
+                currentSongTitle = songTitle
                 updateCassetteLabel(songTitle)  // Обновляем название на кассете
-                playSong(songPath) // Передаем путь для воспроизведения
             } else {
                 Toast.makeText(this, "Путь к файлу или название не найдено", Toast.LENGTH_SHORT).show()
             }
