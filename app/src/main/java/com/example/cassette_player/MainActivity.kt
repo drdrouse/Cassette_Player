@@ -64,13 +64,21 @@ class MainActivity : AppCompatActivity() {
         // Настройка событий для кнопок
         findViewById<ImageButton>(R.id.insert_button).setOnClickListener { playSoundOnce(insertSound)
             openSongSelectionActivity()}
+
+        //Кнопка "Пуск"
         findViewById<ImageButton>(R.id.play_button).setOnClickListener {
             playSoundOnce(playSound)
-            if (!isAnimationRunning && currentSongPath != null) {
+            if (currentSongPath != null) {
                 playSong(currentSongPath!!)  // Начинаем воспроизведение только если путь к песне выбран
+                if (!isAnimationRunning) startCassetteAnimation()
             }
-            if (!isAnimationRunning) startCassetteAnimation()
+            else
+            {
+                Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+            }
         }
+
+        //Кнопка "Пауза"
         findViewById<ImageButton>(R.id.pause_button).setOnClickListener {
             playSoundOnce(pauseSound)
             stopCassetteAnimation()
