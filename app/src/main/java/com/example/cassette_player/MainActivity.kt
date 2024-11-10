@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun openSongSelectionActivity() {
         val intent = Intent(this, SongSelectionActivity::class.java)
-        startActivity(intent)
+        startActivityForResult(intent, REQUEST_CODE_SELECT_SONG)
     }
 
     // Проигрывание звука один раз
