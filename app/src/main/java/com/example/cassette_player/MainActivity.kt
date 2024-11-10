@@ -73,6 +73,7 @@ class MainActivity : AppCompatActivity() {
         }
         findViewById<ImageButton>(R.id.pause_button).setOnClickListener {
             playSoundOnce(pauseSound)
+            stopSong()
             stopCassetteAnimation()
         }
 
@@ -307,6 +308,13 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Ошибка при воспроизведении песни", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun stopSong() {
+        if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
+            mediaPlayer.stop()  // Останавливаем воспроизведение
+            mediaPlayer.prepare()  // Подготавливаем MediaPlayer к следующему воспроизведению
         }
     }
 }
