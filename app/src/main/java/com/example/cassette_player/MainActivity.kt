@@ -33,6 +33,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mediaPlayer: MediaPlayer
     private var currentSongPath: String? = null
     private var currentSongTitle: String? = null
+    private var isPaused = false  // Логическая переменная, отслеживающая, находится ли песня на паузе
+    private var pausePosition = 0 // Переменная для хранения текущей позиции
     // Настройки скоростей анимации
     private val normalFrameDelay = 30L   // Ускоренная обычная скорость
     private val fastFrameDelay = 15L     // Более быстрая скорость для перемотки
@@ -68,12 +70,24 @@ class MainActivity : AppCompatActivity() {
         //Кнопка "Пуск"
         findViewById<ImageButton>(R.id.play_button).setOnClickListener {
             playSoundOnce(playSound)
+
             if (currentSongPath != null) {
-                playSong(currentSongPath!!)  // Начинаем воспроизведение только если путь к песне выбран
-                if (!isAnimationRunning) startCassetteAnimation()
-            }
-            else
-            {
+                try {
+                    if (isPaused) {
+                        mediaPlayer.seekTo(pausePosition)  // Перемещаемся на сохраненную позицию
+                        mediaPlayer.start()                // Продолжаем воспроизведение
+                        if (!isAnimationRunning) startCassetteAnimation()
+                        isPaused = false                   // Сбрасываем флаг паузы
+                        pausePosition = 0                  // Сбрасываем позицию паузы
+                    } else {
+                        playSong(currentSongPath!!)        // Начинаем воспроизведение сначала
+                        if (!isAnimationRunning) startCassetteAnimation()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "Ошибка воспроизведения песни", Toast.LENGTH_SHORT).show()
+                }
+            } else {
                 Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
             }
         }
@@ -320,9 +334,19 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun stopSong() {
-        if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
-            mediaPlayer.stop()  // Останавливаем воспроизведение
-            mediaPlayer.prepare()  // Подготавливаем MediaPlayer к следующему воспроизведению
+        if (::mediaPlayer.isInitialized) {
+            if (mediaPlayer.isPlaying) {
+                pausePosition = mediaPlayer.currentPosition // Запоминаем текущую позицию
+                mediaPlayer.pause()                        // Ставим на паузу
+                isPaused = true                            // Устанавливаем флаг паузы
+                stopCassetteAnimation()                    // Останавливаем анимацию
+            } else if (isPaused) {
+                // Если песня на паузе, сбрасываем mediaPlayer для полной остановки
+                mediaPlayer.stop()
+                mediaPlayer.prepare()                      // Подготавливаем к следующему воспроизведению
+                isPaused = false                           // Сбрасываем флаг паузы
+                pausePosition = 0                          // Сбрасываем позицию
+            }
         }
     }
 }
