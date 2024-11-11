@@ -295,10 +295,13 @@ class MainActivity : AppCompatActivity() {
             val songTitle = data?.getStringExtra("song_title")  // Получаем название песни
 
             if (!songPath.isNullOrEmpty() && !songTitle.isNullOrEmpty()) {
-                // Сохраняем путь к песне, но не начинаем воспроизведение
-                currentSongPath = songPath
-                currentSongTitle = songTitle
-                updateCassetteLabel(songTitle)  // Обновляем название на кассете
+                // Остановить текущую песню и сбросить триггеры
+                stopSong()                 // Останавливаем текущую песню, если играет
+                isPaused = false           // Сбрасываем флаг паузы
+                pausePosition = 0          // Сбрасываем позицию
+
+                currentSongPath = songPath // Устанавливаем новый путь
+                updateCassetteLabel(songTitle) // Обновляем название на кассете
             } else {
                 Toast.makeText(this, "Путь к файлу или название не найдено", Toast.LENGTH_SHORT).show()
             }
@@ -317,7 +320,7 @@ class MainActivity : AppCompatActivity() {
     private fun playSong(songPath: String) {
         try {
             if (::mediaPlayer.isInitialized) {
-                mediaPlayer.reset() // Сбрасываем предыдущий MediaPlayer
+                mediaPlayer.reset() // Сбрасываем MediaPlayer для новой песни
             } else {
                 mediaPlayer = MediaPlayer()
             }
@@ -327,6 +330,8 @@ class MainActivity : AppCompatActivity() {
             mediaPlayer.start()
 
             startCassetteAnimation() // Запускаем анимацию кассеты при воспроизведении
+            isPaused = false         // Сбрасываем флаг паузы
+            pausePosition = 0        // Обнуляем позицию для новой песни
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Ошибка при воспроизведении песни", Toast.LENGTH_SHORT).show()
