@@ -268,7 +268,15 @@ class MainActivity : AppCompatActivity() {
 
                 // Проверка, выбрана ли песня, если нет - не запускаем перемотку
                 if (currentSongPath == null) {
+                    Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+                    showedToastForNoSong = true
                     return true // Не выполняем действий, если песня не выбрана
+                }
+
+                // Если песня на паузе, показываем уведомление и выходим из метода
+                if (isPaused) {
+                    Toast.makeText(this, "Песня на паузе. Нажмите воспроизведение для начала перемотки.", Toast.LENGTH_SHORT).show()
+                    return true
                 }
 
                 // Запускаем звук перемотки и включаем его зацикливание
@@ -278,7 +286,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 // Запускаем анимацию перемотки вперед, если она еще не запущена
-                if (!isFastForwarding && ::mediaPlayer.isInitialized && (mediaPlayer.isPlaying || isPaused)) {
+                if (!isFastForwarding && ::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
                     isFastForwarding = true
                     isAnimationRunning = true
                     animateFramesForward() // Запускаем анимацию перемотки вперед
@@ -295,19 +303,13 @@ class MainActivity : AppCompatActivity() {
                     sound.isLooping = false
                 }
 
-                // Показываем уведомление, если песня не выбрана и уведомление еще не показано
-                if (currentSongPath == null && !showedToastForNoSong) {
-                    Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
-                    showedToastForNoSong = true
-                }
-
                 // Если кнопка отпущена и песня выбрана, останавливаем перемотку и продолжаем проигрывание
                 if (isFastForwarding && currentSongPath != null) {
                     isFastForwarding = false
 
-                    if (::mediaPlayer.isInitialized && (mediaPlayer.isPlaying || isPaused)) {
+                    // Возобновляем воспроизведение, если оно было остановлено
+                    if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
                         mediaPlayer.start() // Продолжаем воспроизведение с новой позиции
-                        isPaused = false
                     }
                     animateFrames(normalFrameDelay) // Возвращаемся к обычной анимации
                 }
@@ -315,7 +317,6 @@ class MainActivity : AppCompatActivity() {
         }
         return true
     }
-
 
     override fun onDestroy() {
         super.onDestroy()
