@@ -35,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     private var currentSongTitle: String? = null
     private var isPaused = false  // Логическая переменная, отслеживающая, находится ли песня на паузе
     private var pausePosition = 0 // Переменная для хранения текущей позиции
+    private var showedToastForNoSong = false // Флаг для уведомления
     // Настройки скоростей анимации
     private val normalFrameDelay = 30L   // Ускоренная обычная скорость
     private val fastFrameDelay = 15L     // Более быстрая скорость для перемотки
@@ -225,29 +226,25 @@ class MainActivity : AppCompatActivity() {
 
     // Обработка удержания кнопки для перемотки назад
     private fun handleRewindBackTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
+        if (currentSongPath == null) {  // Проверка, выбрана ли песня
+            Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+            return false  // Прерываем выполнение, если песня не выбрана
+        }
+
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 button.alpha = 0.75f // Затемняем кнопку при нажатии
+                sound.start()
+                sound.isLooping = true // Зацикливаем звук
 
-                if (currentSongPath != null) {  // Проверка на наличие песни
-                    sound.start()
-                    sound.isLooping = true // Зацикливаем звук
-
-                    if (!isRewinding) {
-                        isRewinding = true
-                        isAnimationRunning = true
-                        animateFramesReversed() // Начинаем анимацию перемотки назад
-                    }
+                if (!isRewinding) {
+                    isRewinding = true
+                    isAnimationRunning = true
+                    animateFramesReversed() // Начинаем анимацию перемотки назад
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 button.alpha = 1.0f // Возвращаем кнопку к нормальному состоянию
-
-                if (currentSongPath == null) { // Проверка песни при отпускании
-                    Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
-                    return false  // Прерываем выполнение, если песня не выбрана
-                }
-
                 sound.pause()
                 sound.seekTo(0)
                 sound.isLooping = false // Отключаем зацикливание
@@ -265,34 +262,45 @@ class MainActivity : AppCompatActivity() {
     private fun handleRewindForwardTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                // Сбрасываем флаг при новом нажатии
+                showedToastForNoSong = false
                 button.alpha = 0.75f // Затемняем кнопку при нажатии
 
-                if (currentSongPath != null) {  // Проверка на наличие песни
-                    sound.start()
-                    sound.isLooping = true // Зацикливаем звук
+                // Проверка, выбрана ли песня, если нет - не запускаем перемотку
+                if (currentSongPath == null) {
+                    return true // Не выполняем действий, если песня не выбрана
+                }
 
-                    if (!isFastForwarding) {
-                        isFastForwarding = true
-                        isAnimationRunning = true
-                        animateFramesForward()  // Начинаем анимацию и перемотку
-                    }
+                sound.start()
+                sound.isLooping = true // Зацикливаем звук
+
+                if (!isFastForwarding && ::mediaPlayer.isInitialized && (mediaPlayer.isPlaying || isPaused)) {
+                    isFastForwarding = true
+                    isAnimationRunning = true
+                    animateFramesForward() // Запускаем анимацию перемотки вперед
                 }
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 button.alpha = 1.0f // Возвращаем кнопку к нормальному состоянию
-
-                if (currentSongPath == null) { // Проверка песни при отпускании
-                    Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
-                    return false  // Прерываем выполнение, если песня не выбрана
-                }
-
                 sound.pause()
                 sound.seekTo(0)
-                sound.isLooping = false // Отключаем зацикливание
+                sound.isLooping = false
 
-                if (isFastForwarding) {
+                // Показываем уведомление, если песня не выбрана и уведомление еще не показано
+                if (currentSongPath == null && !showedToastForNoSong) {
+                    Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+                    showedToastForNoSong = true
+                }
+
+                // Если кнопка отпущена и песня выбрана, останавливаем перемотку и продолжаем проигрывание
+                if (isFastForwarding && currentSongPath != null) {
                     isFastForwarding = false
-                    if (mediaPlayer.isPlaying) mediaPlayer.start()  // Продолжаем воспроизведение с новой позиции
+
+                    if (::mediaPlayer.isInitialized && (mediaPlayer.isPlaying || isPaused)) {
+                        mediaPlayer.start() // Продолжаем воспроизведение с новой позиции
+                        isPaused = false
+                    }
                     animateFrames(normalFrameDelay) // Возвращаемся к обычной анимации
                 }
             }
