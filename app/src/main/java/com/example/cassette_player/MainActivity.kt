@@ -271,9 +271,13 @@ class MainActivity : AppCompatActivity() {
                     return true // Не выполняем действий, если песня не выбрана
                 }
 
-                sound.start()
-                sound.isLooping = true // Зацикливаем звук
+                // Запускаем звук перемотки и включаем его зацикливание
+                if (!sound.isPlaying) {
+                    sound.start()
+                    sound.isLooping = true // Зацикливаем звук перемотки
+                }
 
+                // Запускаем анимацию перемотки вперед, если она еще не запущена
                 if (!isFastForwarding && ::mediaPlayer.isInitialized && (mediaPlayer.isPlaying || isPaused)) {
                     isFastForwarding = true
                     isAnimationRunning = true
@@ -283,9 +287,13 @@ class MainActivity : AppCompatActivity() {
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 button.alpha = 1.0f // Возвращаем кнопку к нормальному состоянию
-                sound.pause()
-                sound.seekTo(0)
-                sound.isLooping = false
+
+                // Останавливаем звук перемотки и выключаем зацикливание
+                if (sound.isPlaying) {
+                    sound.pause()
+                    sound.seekTo(0)
+                    sound.isLooping = false
+                }
 
                 // Показываем уведомление, если песня не выбрана и уведомление еще не показано
                 if (currentSongPath == null && !showedToastForNoSong) {
@@ -307,6 +315,7 @@ class MainActivity : AppCompatActivity() {
         }
         return true
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
