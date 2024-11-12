@@ -262,6 +262,7 @@ class MainActivity : AppCompatActivity() {
     private fun handleRewindForwardTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                playSoundOnce(playSound)
                 // Сбрасываем флаг при новом нажатии
                 showedToastForNoSong = false
                 button.alpha = 0.75f // Затемняем кнопку при нажатии
@@ -317,6 +318,7 @@ class MainActivity : AppCompatActivity() {
         }
         return true
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
