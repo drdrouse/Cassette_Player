@@ -201,15 +201,18 @@ class MainActivity : AppCompatActivity() {
 
     // Анимация кадров вперед на повышенной скорости для перемотки вперёд
     private fun animateFramesForward() {
-        if (isFastForwarding) {
+        if (isFastForwarding && mediaPlayer.isPlaying) {
             currentFrame = (currentFrame + 1) % cassetteAnimation.numberOfFrames
             cassetteAnimation.selectDrawable(currentFrame)
 
+            // Перематываем вперёд на 100 миллисекунд
+            mediaPlayer.seekTo(mediaPlayer.currentPosition + 100)
+
             cassetteImageView.postDelayed({
                 if (isFastForwarding) {
-                    animateFramesForward() // Рекурсивный вызов для следующего кадра
+                    animateFramesForward() // Рекурсивный вызов для продолжения перемотки
                 }
-            }, fastFrameDelay) // Увеличенная скорость воспроизведения
+            }, fastFrameDelay) // Ускоренная задержка кадров
         }
     }
 
@@ -222,6 +225,11 @@ class MainActivity : AppCompatActivity() {
 
     // Обработка удержания кнопки для перемотки назад
     private fun handleRewindBackTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
+        if (currentSongPath == null) {  // Проверка, выбрана ли песня
+            Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+            return false  // Прерываем выполнение, если песня не выбрана
+        }
+
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 button.alpha = 0.75f // Затемняем кнопку при нажатии
@@ -231,7 +239,7 @@ class MainActivity : AppCompatActivity() {
                 if (!isRewinding) {
                     isRewinding = true
                     isAnimationRunning = true
-                    animateFramesReversed()
+                    animateFramesReversed() // Начинаем анимацию перемотки назад
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -242,7 +250,7 @@ class MainActivity : AppCompatActivity() {
 
                 if (isRewinding) {
                     isRewinding = false
-                    animateFrames(normalFrameDelay)
+                    animateFrames(normalFrameDelay) // Возвращаемся к обычной анимации
                 }
             }
         }
@@ -251,6 +259,11 @@ class MainActivity : AppCompatActivity() {
 
     // Обработка удержания кнопки для перемотки вперёд
     private fun handleRewindForwardTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
+        if (currentSongPath == null) {  // Проверка, выбрана ли песня
+            Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+            return false  // Прерываем выполнение, если песня не выбрана
+        }
+
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 button.alpha = 0.75f // Затемняем кнопку при нажатии
@@ -260,7 +273,7 @@ class MainActivity : AppCompatActivity() {
                 if (!isFastForwarding) {
                     isFastForwarding = true
                     isAnimationRunning = true
-                    animateFramesForward()
+                    animateFramesForward()  // Начинаем анимацию и перемотку
                 }
             }
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
@@ -271,7 +284,8 @@ class MainActivity : AppCompatActivity() {
 
                 if (isFastForwarding) {
                     isFastForwarding = false
-                    animateFrames(normalFrameDelay)
+                    if (mediaPlayer.isPlaying) mediaPlayer.start()  // Продолжаем воспроизведение с новой позиции
+                    animateFrames(normalFrameDelay) // Возвращаемся к обычной анимации
                 }
             }
         }
