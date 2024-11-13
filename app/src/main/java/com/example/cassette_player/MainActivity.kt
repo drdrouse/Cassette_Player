@@ -39,8 +39,7 @@ class MainActivity : AppCompatActivity() {
     private var pausePosition = 0 // Переменная для хранения текущей позиции
     private var showedToastForNoSong = false // Флаг для уведомления
     private val rewindInterval = 2000 // Интервал перемотки назад (2 секунды)
-    private var rewindHandler: Handler? = null
-    private var rewindRunnable: Runnable? = null
+    private val rewindHandler = Handler(Looper.getMainLooper())
     // Настройки скоростей анимации
     private val normalFrameDelay = 30L   // Ускоренная обычная скорость
     private val fastFrameDelay = 15L     // Более быстрая скорость для перемотки
@@ -229,91 +228,77 @@ class MainActivity : AppCompatActivity() {
         isFastForwarding = false
     }
 
-    // Обработка удержания кнопки для перемотки назад
+    // Задача для перемотки назад
+    private val rewindRunnable = object : Runnable {
+        override fun run() {
+            if (::mediaPlayer.isInitialized) {
+                val rewindInterval = 300 // Интервал перемотки в миллисекундах (например, 2 секунды)
+                val currentPosition = mediaPlayer.currentPosition
+                mediaPlayer.seekTo((currentPosition - rewindInterval).coerceAtLeast(0)) // Перематываем назад, не меньше 0
+                rewindHandler.postDelayed(this, 50) // Повторяем задачу каждые 500 мс
+            }
+        }
+    }
+
     private fun handleRewindBackTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 playSoundOnce(playSound)
+                showedToastForNoSong = false
                 button.alpha = 0.75f // Затемняем кнопку при нажатии
 
-                // Проверка, выбрана ли песня
                 if (currentSongPath == null) {
-                    if (!showedToastForNoSong) {
-                        Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
-                        showedToastForNoSong = true
-                    }
-                    return true // Выходим, если песня не выбрана
+                    Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+                    showedToastForNoSong = true
+                    return true
                 }
 
-                // Если песня на паузе
                 if (isPaused) {
                     Toast.makeText(this, "Песня на паузе. Нажмите воспроизведение для начала перемотки.", Toast.LENGTH_SHORT).show()
                     return true
                 }
 
-                // Остановка воспроизведения и запуск звука перемотки
-                mediaPlayer.pause()
                 if (!sound.isPlaying) {
                     sound.start()
                     sound.isLooping = true
                 }
-                isRewinding = true
 
-                // Запуск анимации перемотки назад
-                animateFramesReversed()
+                // Начинаем перемотку назад при удерживании кнопки
+                if (!isRewinding && ::mediaPlayer.isInitialized) {
+                    isRewinding = true
 
-                // Инициализация перемотки назад
-                rewindHandler = Handler(Looper.getMainLooper())
-                rewindRunnable = object : Runnable {
-                    override fun run() {
-                        val reachedStart = rewindSong(mediaPlayer) // Здесь теперь будет корректный возврат
-                        if (!reachedStart) {
-                            rewindHandler?.postDelayed(this, 500)
-                        } else {
-                            handleEndOfRewind(sound, button)
-                        }
+                    // Ставим песню на паузу перед началом перемотки
+                    if (mediaPlayer.isPlaying) {
+                        mediaPlayer.pause()
                     }
+
+                    rewindHandler.post(rewindRunnable) // Запускаем задачу перемотки
                 }
-                rewindHandler?.post(rewindRunnable!!)
             }
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                button.alpha = 1.0f
-                handleEndOfRewind(sound, button)
+                button.alpha = 1.0f // Возвращаем кнопку к нормальному состоянию
+
+                if (sound.isPlaying) {
+                    sound.pause()
+                    sound.seekTo(0)
+                    sound.isLooping = false
+                }
+
+                // Останавливаем перемотку назад
+                if (isRewinding) {
+                    isRewinding = false
+                    rewindHandler.removeCallbacks(rewindRunnable) // Останавливаем задачу перемотки
+
+                    // Возобновляем воспроизведение, если песня была выбрана
+                    if (::mediaPlayer.isInitialized && !isPaused) {
+                        mediaPlayer.start() // Продолжаем воспроизведение с текущей позиции
+                    }
+                }
             }
         }
         return true
     }
-
-    private fun rewindSong(mediaPlayer: MediaPlayer): Boolean {
-        val currentPosition = mediaPlayer.currentPosition
-        return if (currentPosition - rewindInterval >= 0) {
-            mediaPlayer.seekTo(currentPosition - rewindInterval)
-            false // Продолжаем перемотку, начало еще не достигнуто
-        } else {
-            mediaPlayer.seekTo(0) // Устанавливаем начало песни
-            true // Достигли начала песни
-        }
-    }
-
-    // Метод для управления завершением перемотки
-    private fun handleEndOfRewind(sound: MediaPlayer, button: ImageButton) {
-        if (sound.isPlaying) {
-            sound.pause()
-            sound.seekTo(0)
-            sound.isLooping = false
-        }
-        stopCassetteAnimation() // Останавливаем текущую анимацию
-        isRewinding = false
-        rewindHandler?.removeCallbacks(rewindRunnable!!)
-
-        // Возобновляем обычное воспроизведение
-        if (::mediaPlayer.isInitialized && !mediaPlayer.isPlaying) {
-            mediaPlayer.start()
-        }
-        startCassetteAnimation() // Запуск стандартной анимации кассеты
-    }
-
 
 
     // Обработка удержания кнопки для перемотки вперёд
