@@ -294,6 +294,7 @@ class MainActivity : AppCompatActivity() {
                     if (::mediaPlayer.isInitialized && !isPaused) {
                         mediaPlayer.start() // Продолжаем воспроизведение с текущей позиции
                     }
+                    animateFrames(normalFrameDelay)
                 }
             }
         }
