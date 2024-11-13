@@ -253,8 +253,12 @@ class MainActivity : AppCompatActivity() {
                 rewindHandler = Handler(Looper.getMainLooper())
                 rewindRunnable = object : Runnable {
                     override fun run() {
-                        rewindSong(mediaPlayer)
-                        rewindHandler?.postDelayed(this, 500) // Повторяем каждые 500 мс
+                        val reachedStart = rewindSong(mediaPlayer)
+                        if (!reachedStart) { // Если не достигли начала, продолжаем перемотку
+                            rewindHandler?.postDelayed(this, 500) // Повторяем каждые 500 мс
+                        } else { // Если достигли начала, сразу завершаем перемотку
+                            handleEndOfRewind(sound, button)
+                        }
                     }
                 }
                 rewindHandler?.post(rewindRunnable!!)
@@ -262,32 +266,41 @@ class MainActivity : AppCompatActivity() {
 
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 button.alpha = 1.0f // Возвращаем кнопку к нормальному состоянию
-
-                // Останавливаем звук перемотки и анимацию
-                if (sound.isPlaying) {
-                    sound.pause()
-                    sound.seekTo(0)
-                    sound.isLooping = false
-                }
-                stopCassetteAnimation()
-                isRewinding = false
-
-                // Останавливаем выполнение rewindRunnable и возобновляем воспроизведение
-                rewindHandler?.removeCallbacks(rewindRunnable!!)
-                mediaPlayer.start()
+                handleEndOfRewind(sound, button) // Завершаем перемотку и запускаем обычное воспроизведение
             }
         }
         return true
     }
 
-    private fun rewindSong(mediaPlayer: MediaPlayer) {
+    private fun rewindSong(mediaPlayer: MediaPlayer): Boolean {
         val currentPosition = mediaPlayer.currentPosition
-        if (currentPosition - rewindInterval >= 0) {
+        return if (currentPosition - rewindInterval >= 0) {
             mediaPlayer.seekTo(currentPosition - rewindInterval)
+            false // Продолжаем перемотку
         } else {
-            mediaPlayer.seekTo(0) // Если текущая позиция меньше интервала перемотки, устанавливаем начало песни
+            mediaPlayer.seekTo(0) // Если достигли начала, устанавливаем начало песни
+            true // Достигли начала
         }
     }
+
+    private fun handleEndOfRewind(sound: MediaPlayer, button: ImageButton) {
+        // Останавливаем звук перемотки и анимацию
+        if (sound.isPlaying) {
+            sound.pause()
+            sound.seekTo(0)
+            sound.isLooping = false
+        }
+        stopCassetteAnimation()
+        isRewinding = false
+
+        // Останавливаем выполнение rewindRunnable и возобновляем воспроизведение
+        rewindHandler?.removeCallbacks(rewindRunnable!!)
+        mediaPlayer.start()
+
+        // Запуск обычной анимации после завершения перемотки
+        startCassetteAnimation() // Запуск стандартной анимации кассеты
+    }
+
 
     // Обработка удержания кнопки для перемотки вперёд
     private fun handleRewindForwardTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
