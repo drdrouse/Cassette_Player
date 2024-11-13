@@ -231,23 +231,28 @@ class MainActivity : AppCompatActivity() {
 
     // Обработка удержания кнопки для перемотки назад
     private fun handleRewindBackTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
-        if (!mediaPlayer.isPlaying && mediaPlayer.currentPosition == 0) {  // Проверка, выбрана ли песня и запущена ли она
+        if (!mediaPlayer.isPlaying && mediaPlayer.currentPosition == 0) {
             Toast.makeText(this, "Песня не выбрана или не воспроизводится", Toast.LENGTH_SHORT).show()
-            return false  // Прерываем выполнение, если песня не выбрана или не запущена
+            return false
         }
 
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 button.alpha = 0.75f // Затемняем кнопку при нажатии
 
-                // Ставим песню на паузу
+                // Остановка воспроизведения и запуск анимации перемотки назад
                 mediaPlayer.pause()
+                if (!sound.isPlaying) {
+                    sound.start()
+                    sound.isLooping = true // Зацикливаем звук перемотки
+                }
+                isRewinding = true
+                animateFramesReversed() // Запуск анимации в обратном порядке
 
                 // Инициализация перемотки назад
                 rewindHandler = Handler(Looper.getMainLooper())
                 rewindRunnable = object : Runnable {
                     override fun run() {
-                        // Вызываем метод для перемотки назад
                         rewindSong(mediaPlayer)
                         rewindHandler?.postDelayed(this, 500) // Повторяем каждые 500 мс
                     }
@@ -258,10 +263,17 @@ class MainActivity : AppCompatActivity() {
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 button.alpha = 1.0f // Возвращаем кнопку к нормальному состоянию
 
-                // Останавливаем выполнение rewindRunnable
-                rewindHandler?.removeCallbacks(rewindRunnable!!)
+                // Останавливаем звук перемотки и анимацию
+                if (sound.isPlaying) {
+                    sound.pause()
+                    sound.seekTo(0)
+                    sound.isLooping = false
+                }
+                stopCassetteAnimation()
+                isRewinding = false
 
-                // Возобновляем воспроизведение с текущей позиции
+                // Останавливаем выполнение rewindRunnable и возобновляем воспроизведение
+                rewindHandler?.removeCallbacks(rewindRunnable!!)
                 mediaPlayer.start()
             }
         }
