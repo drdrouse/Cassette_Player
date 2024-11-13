@@ -7,6 +7,9 @@ import android.graphics.drawable.AnimationDrawable
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.widget.FrameLayout
@@ -29,6 +32,14 @@ class MainActivity : AppCompatActivity() {
     private var isFastForwarding = false
     private var currentFrame = 0 // Переменная для хранения текущего кадра анимации
     private val REQUEST_CODE_READ_EXTERNAL_STORAGE = 1
+    private lateinit var mediaPlayer: MediaPlayer
+    private var currentSongPath: String? = null
+    private var currentSongTitle: String? = null
+    private var isPaused = false  // Логическая переменная, отслеживающая, находится ли песня на паузе
+    private var pausePosition = 0 // Переменная для хранения текущей позиции
+    private var showedToastForNoSong = false // Флаг для уведомления
+    private val rewindInterval = 2000 // Интервал перемотки назад (2 секунды)
+    private val rewindHandler = Handler(Looper.getMainLooper())
     // Настройки скоростей анимации
     private val normalFrameDelay = 30L   // Ускоренная обычная скорость
     private val fastFrameDelay = 15L     // Более быстрая скорость для перемотки
@@ -60,13 +71,37 @@ class MainActivity : AppCompatActivity() {
         // Настройка событий для кнопок
         findViewById<ImageButton>(R.id.insert_button).setOnClickListener { playSoundOnce(insertSound)
             openSongSelectionActivity()}
+
+        //Кнопка "Пуск"
         findViewById<ImageButton>(R.id.play_button).setOnClickListener {
             playSoundOnce(playSound)
-            if (!isAnimationRunning) startCassetteAnimation() // Начать анимацию только если она не запущена
+
+            if (currentSongPath != null) {
+                try {
+                    if (isPaused) {
+                        mediaPlayer.seekTo(pausePosition)  // Перемещаемся на сохраненную позицию
+                        mediaPlayer.start()                // Продолжаем воспроизведение
+                        if (!isAnimationRunning) startCassetteAnimation()
+                        isPaused = false                   // Сбрасываем флаг паузы
+                        pausePosition = 0                  // Сбрасываем позицию паузы
+                    } else {
+                        playSong(currentSongPath!!)        // Начинаем воспроизведение сначала
+                        if (!isAnimationRunning) startCassetteAnimation()
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "Ошибка воспроизведения песни", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+            }
         }
+
+        //Кнопка "Пауза"
         findViewById<ImageButton>(R.id.pause_button).setOnClickListener {
             playSoundOnce(pauseSound)
             stopCassetteAnimation()
+            stopSong()
         }
 
         // Обработка удержания для кнопок перемотки назад и вперёд
@@ -171,15 +206,18 @@ class MainActivity : AppCompatActivity() {
 
     // Анимация кадров вперед на повышенной скорости для перемотки вперёд
     private fun animateFramesForward() {
-        if (isFastForwarding) {
+        if (isFastForwarding && mediaPlayer.isPlaying) {
             currentFrame = (currentFrame + 1) % cassetteAnimation.numberOfFrames
             cassetteAnimation.selectDrawable(currentFrame)
 
+            // Перематываем вперёд на 100 миллисекунд
+            mediaPlayer.seekTo(mediaPlayer.currentPosition + 100)
+
             cassetteImageView.postDelayed({
                 if (isFastForwarding) {
-                    animateFramesForward() // Рекурсивный вызов для следующего кадра
+                    animateFramesForward() // Рекурсивный вызов для продолжения перемотки
                 }
-            }, fastFrameDelay) // Увеличенная скорость воспроизведения
+            }, fastFrameDelay) // Ускоренная задержка кадров
         }
     }
 
@@ -190,63 +228,141 @@ class MainActivity : AppCompatActivity() {
         isFastForwarding = false
     }
 
-    // Обработка удержания кнопки для перемотки назад
+    // Задача для перемотки назад
+    private val rewindRunnable = object : Runnable {
+        override fun run() {
+            if (::mediaPlayer.isInitialized) {
+                val rewindInterval = 300 // Интервал перемотки в миллисекундах (например, 2 секунды)
+                val currentPosition = mediaPlayer.currentPosition
+                mediaPlayer.seekTo((currentPosition - rewindInterval).coerceAtLeast(0)) // Перематываем назад, не меньше 0
+                rewindHandler.postDelayed(this, 50) // Повторяем задачу каждые 500 мс
+            }
+        }
+    }
+
     private fun handleRewindBackTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                playSoundOnce(playSound)
+                showedToastForNoSong = false
                 button.alpha = 0.75f // Затемняем кнопку при нажатии
-                sound.start()
-                sound.isLooping = true // Зацикливаем звук
 
-                if (!isRewinding) {
+                if (currentSongPath == null) {
+                    Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+                    showedToastForNoSong = true
+                    return true
+                }
+
+                if (isPaused) {
+                    Toast.makeText(this, "Песня на паузе. Нажмите воспроизведение для начала перемотки.", Toast.LENGTH_SHORT).show()
+                    return true
+                }
+
+                if (!sound.isPlaying) {
+                    sound.start()
+                    sound.isLooping = true
+                }
+
+                // Начинаем перемотку назад при удерживании кнопки
+                if (!isRewinding && ::mediaPlayer.isInitialized) {
                     isRewinding = true
-                    isAnimationRunning = true
+
+                    // Ставим песню на паузу перед началом перемотки
+                    if (mediaPlayer.isPlaying) {
+                        mediaPlayer.pause()
+                    }
                     animateFramesReversed()
+                    rewindHandler.post(rewindRunnable) // Запускаем задачу перемотки
                 }
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 button.alpha = 1.0f // Возвращаем кнопку к нормальному состоянию
-                sound.pause()
-                sound.seekTo(0)
-                sound.isLooping = false // Отключаем зацикливание
 
+                if (sound.isPlaying) {
+                    sound.pause()
+                    sound.seekTo(0)
+                    sound.isLooping = false
+                }
+
+                // Останавливаем перемотку назад
                 if (isRewinding) {
                     isRewinding = false
+                    rewindHandler.removeCallbacks(rewindRunnable) // Останавливаем задачу перемотки
+
+                    // Возобновляем воспроизведение, если песня была выбрана
+                    if (::mediaPlayer.isInitialized && !isPaused) {
+                        mediaPlayer.start() // Продолжаем воспроизведение с текущей позиции
+                    }
                     animateFrames(normalFrameDelay)
                 }
             }
         }
         return true
     }
+
 
     // Обработка удержания кнопки для перемотки вперёд
     private fun handleRewindForwardTouchEvent(event: MotionEvent, sound: MediaPlayer, button: ImageButton): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
+                playSoundOnce(playSound)
+                // Сбрасываем флаг при новом нажатии
+                showedToastForNoSong = false
                 button.alpha = 0.75f // Затемняем кнопку при нажатии
-                sound.start()
-                sound.isLooping = true // Зацикливаем звук
 
-                if (!isFastForwarding) {
+                // Проверка, выбрана ли песня, если нет - не запускаем перемотку
+                if (currentSongPath == null) {
+                    Toast.makeText(this, "Песня не выбрана", Toast.LENGTH_SHORT).show()
+                    showedToastForNoSong = true
+                    return true // Не выполняем действий, если песня не выбрана
+                }
+
+                // Если песня на паузе, показываем уведомление и выходим из метода
+                if (isPaused) {
+                    Toast.makeText(this, "Песня на паузе. Нажмите воспроизведение для начала перемотки.", Toast.LENGTH_SHORT).show()
+                    return true
+                }
+
+                // Запускаем звук перемотки и включаем его зацикливание
+                if (!sound.isPlaying) {
+                    sound.start()
+                    sound.isLooping = true // Зацикливаем звук перемотки
+                }
+
+                // Запускаем анимацию перемотки вперед, если она еще не запущена
+                if (!isFastForwarding && ::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
                     isFastForwarding = true
                     isAnimationRunning = true
-                    animateFramesForward()
+                    animateFramesForward() // Запускаем анимацию перемотки вперед
                 }
             }
+
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 button.alpha = 1.0f // Возвращаем кнопку к нормальному состоянию
-                sound.pause()
-                sound.seekTo(0)
-                sound.isLooping = false // Отключаем зацикливание
 
-                if (isFastForwarding) {
+                // Останавливаем звук перемотки и выключаем зацикливание
+                if (sound.isPlaying) {
+                    sound.pause()
+                    sound.seekTo(0)
+                    sound.isLooping = false
+                }
+
+                // Если кнопка отпущена и песня выбрана, останавливаем перемотку и продолжаем проигрывание
+                if (isFastForwarding && currentSongPath != null) {
                     isFastForwarding = false
-                    animateFrames(normalFrameDelay)
+
+                    // Возобновляем воспроизведение, если оно было остановлено
+                    if (::mediaPlayer.isInitialized && mediaPlayer.isPlaying) {
+                        mediaPlayer.start() // Продолжаем воспроизведение с новой позиции
+                    }
+                    animateFrames(normalFrameDelay) // Возвращаемся к обычной анимации
                 }
             }
         }
         return true
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
@@ -261,9 +377,19 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode == REQUEST_CODE_SELECT_SONG && resultCode == Activity.RESULT_OK) {
-            val selectedSong = data?.getStringExtra("selected_song")
-            if (selectedSong != null) {
-                updateCassetteLabel(selectedSong) // Обновление текста с названием песни
+            val songPath = data?.getStringExtra("song_path")
+            val songTitle = data?.getStringExtra("song_title")  // Получаем название песни
+
+            if (!songPath.isNullOrEmpty() && !songTitle.isNullOrEmpty()) {
+                // Остановить текущую песню и сбросить триггеры
+                stopSong()                 // Останавливаем текущую песню, если играет
+                isPaused = false           // Сбрасываем флаг паузы
+                pausePosition = 0          // Сбрасываем позицию
+
+                currentSongPath = songPath // Устанавливаем новый путь
+                updateCassetteLabel(songTitle) // Обновляем название на кассете
+            } else {
+                Toast.makeText(this, "Путь к файлу или название не найдено", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -275,5 +401,43 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val REQUEST_CODE_SELECT_SONG = 1
+    }
+
+    private fun playSong(songPath: String) {
+        try {
+            if (::mediaPlayer.isInitialized) {
+                mediaPlayer.reset() // Сбрасываем MediaPlayer для новой песни
+            } else {
+                mediaPlayer = MediaPlayer()
+            }
+
+            mediaPlayer.setDataSource(songPath)
+            mediaPlayer.prepare()
+            mediaPlayer.start()
+
+            startCassetteAnimation() // Запускаем анимацию кассеты при воспроизведении
+            isPaused = false         // Сбрасываем флаг паузы
+            pausePosition = 0        // Обнуляем позицию для новой песни
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Ошибка при воспроизведении песни", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun stopSong() {
+        if (::mediaPlayer.isInitialized) {
+            if (mediaPlayer.isPlaying) {
+                pausePosition = mediaPlayer.currentPosition // Запоминаем текущую позицию
+                mediaPlayer.pause()                        // Ставим на паузу
+                isPaused = true                            // Устанавливаем флаг паузы
+                stopCassetteAnimation()                    // Останавливаем анимацию
+            } else if (isPaused) {
+                // Если песня на паузе, сбрасываем mediaPlayer для полной остановки
+                mediaPlayer.stop()
+                mediaPlayer.prepare()                      // Подготавливаем к следующему воспроизведению
+                isPaused = false                           // Сбрасываем флаг паузы
+                pausePosition = 0                          // Сбрасываем позицию
+            }
+        }
     }
 }
