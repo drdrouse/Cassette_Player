@@ -271,7 +271,7 @@ class MainActivity : AppCompatActivity() {
                     if (mediaPlayer.isPlaying) {
                         mediaPlayer.pause()
                     }
-                    animateFramesReversed()
+
                     rewindHandler.post(rewindRunnable) // Запускаем задачу перемотки
                 }
             }
