@@ -373,7 +373,13 @@ class MainActivity : AppCompatActivity() {
 
             if (!songPath.isNullOrEmpty() && !songTitle.isNullOrEmpty()) {
                 try {
-                    stopSong() // Останавливаем текущую песню, если она играет
+                    // Останавливаем текущую песню, если она играет
+                    stopSong()
+
+                    // Сбрасываем флаги состояния
+                    isPaused = false
+                    pausePosition = 0
+
                     if (!::mediaPlayer.isInitialized) {
                         mediaPlayer = MediaPlayer() // Создаём новый экземпляр MediaPlayer, если он не существует
                     }
@@ -423,17 +429,20 @@ class MainActivity : AppCompatActivity() {
                 return
             }
 
-            if (!mediaPlayer.isPlaying) {
-                // Всегда запускаем воспроизведение с начала, если новая песня
-                mediaPlayer.seekTo(0)
-                mediaPlayer.start() // Запускаем воспроизведение
-                startCassetteAnimation() // Запуск анимации
-                isPaused = false
-
-                updateNotification(currentSongTitle)
-            } else {
-                Toast.makeText(this, "Песня уже воспроизводится", Toast.LENGTH_SHORT).show()
+            if (currentSongPath != songPath) {
+                // Если новая песня, сбрасываем MediaPlayer и начинаем с начала
+                mediaPlayer.reset()
+                mediaPlayer.setDataSource(songPath)
+                mediaPlayer.prepare()
+                currentSongPath = songPath
             }
+
+            mediaPlayer.seekTo(0) // Всегда начинаем с начала
+            mediaPlayer.start()   // Запускаем воспроизведение
+            startCassetteAnimation() // Запуск анимации
+            isPaused = false
+            pausePosition = 0 // Сбрасываем позицию паузы
+            updateNotification(currentSongTitle)
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Не удалось воспроизвести песню", Toast.LENGTH_SHORT).show()
