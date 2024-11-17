@@ -37,7 +37,13 @@ class SongSelectionActivity : AppCompatActivity() {
 
         // Заранее определённый список песен (с URI ресурсов)
         val predefinedSongs = listOf(
-            Pair("Pink Floyd - Another Brick In The Wall (Original)", "android.resource://${packageName}/${R.raw.wall}")
+            Pair("Pink Floyd - Another Brick In The Wall (Original)", "android.resource://${packageName}/${R.raw.wall}"),
+            Pair("The Rolling Stones - Anybody Seen My Baby", "android.resource://${packageName}/${R.raw.song2}"),
+            Pair("Scorpions - Holiday", "android.resource://${packageName}/${R.raw.song3}"),
+            Pair("AC/DC - Highway To Hell", "android.resource://${packageName}/${R.raw.song4}"),
+            Pair("Metallica - Nothing Else Matters", "android.resource://${packageName}/${R.raw.song5}"),
+            Pair("Alice Cooper - Poison", "android.resource://${packageName}/${R.raw.song6}"),
+            Pair("The Animals - House Of Rising Sun", "android.resource://${packageName}/${R.raw.song7}"),
         )
 
         // Формируем списки для отображения
