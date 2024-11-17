@@ -1,6 +1,9 @@
 package com.example.cassette_player
 
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.AnimationDrawable
@@ -18,6 +21,10 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,6 +48,7 @@ class MainActivity : AppCompatActivity() {
     private var showedToastForNoSong = false // Флаг для уведомления
     private val rewindInterval = 2000 // Интервал перемотки назад (2 секунды)
     private val rewindHandler = Handler(Looper.getMainLooper())
+    private val CHANNEL_ID = "music_notification_channel"
     // Настройки скоростей анимации
     private val normalFrameDelay = 30L   // Ускоренная обычная скорость
     private val fastFrameDelay = 15L     // Более быстрая скорость для перемотки
@@ -48,6 +56,25 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    100
+                )
+            } else {
+                // Разрешение уже предоставлено
+                createNotificationChannel()
+            }
+        } else {
+            // Для старых версий Android
+            createNotificationChannel()
+        }
+
         // Полноэкранный режим
         window.decorView.systemUiVisibility = (
                 View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -367,6 +394,9 @@ class MainActivity : AppCompatActivity() {
                     currentSongPath = songPath
                     currentSongTitle = songTitle
                     updateCassetteLabel(songTitle) // Обновляем отображение кассеты
+
+                    // Вызов метода для обновления уведомления
+                    updateNotification(songTitle)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     Toast.makeText(this, "Ошибка при выборе песни", Toast.LENGTH_SHORT).show()
@@ -399,6 +429,8 @@ class MainActivity : AppCompatActivity() {
                 mediaPlayer.start() // Запускаем воспроизведение
                 startCassetteAnimation() // Запуск анимации
                 isPaused = false
+
+                updateNotification(currentSongTitle)
             } else {
                 Toast.makeText(this, "Песня уже воспроизводится", Toast.LENGTH_SHORT).show()
             }
@@ -421,6 +453,51 @@ class MainActivity : AppCompatActivity() {
                 mediaPlayer.prepare()                      // Подготавливаем к следующему воспроизведению
                 isPaused = false                           // Сбрасываем флаг паузы
                 pausePosition = 0                          // Сбрасываем позицию
+
+                clearNotification()
+            }
+        }
+    }
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val name = "Music Player Notifications"
+            val descriptionText = "Displays the current song playing"
+            val importance = NotificationManager.IMPORTANCE_LOW
+            val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
+                description = descriptionText
+            }
+            val notificationManager: NotificationManager =
+                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun updateNotification(songTitle: String?) {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setSmallIcon(R.drawable.logo) // Замените на ваш значок
+            .setContentTitle("Playing Now")
+            .setContentText(songTitle ?: "No song playing")
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true) // Уведомление не исчезает свайпом
+
+        notificationManager.notify(1, builder.build())
+    }
+
+    private fun clearNotification() {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(1)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 100) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Разрешение на уведомления получено", Toast.LENGTH_SHORT).show()
+                createNotificationChannel()
+            } else {
+                Toast.makeText(this, "Разрешение на уведомления отклонено", Toast.LENGTH_SHORT).show()
             }
         }
     }
