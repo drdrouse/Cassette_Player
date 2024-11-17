@@ -346,15 +346,27 @@ class MainActivity : AppCompatActivity() {
 
             if (!songPath.isNullOrEmpty() && !songTitle.isNullOrEmpty()) {
                 try {
-                    stopSong()  // Останавливаем текущую песню, если она играет
+                    stopSong() // Останавливаем текущую песню, если она играет
                     if (!::mediaPlayer.isInitialized) {
-                        mediaPlayer = MediaPlayer() // Создаём новый экземпляр, если он не существует
+                        mediaPlayer = MediaPlayer() // Создаём новый экземпляр MediaPlayer, если он не существует
                     }
-                    mediaPlayer.reset() // Сбрасываем MediaPlayer перед выбором новой песни
 
+                    mediaPlayer.reset() // Сбрасываем MediaPlayer перед загрузкой новой песни
+
+                    // Устанавливаем данные для новой песни
+                    if (songPath.startsWith("android.resource://")) {
+                        val uri = Uri.parse(songPath)
+                        val afd = contentResolver.openAssetFileDescriptor(uri, "r")!!
+                        mediaPlayer.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                        afd.close()
+                    } else {
+                        mediaPlayer.setDataSource(songPath)
+                    }
+
+                    mediaPlayer.prepare() // Предварительно подготавливаем песню, но не запускаем
                     currentSongPath = songPath
                     currentSongTitle = songTitle
-                    updateCassetteLabel(songTitle)  // Обновляем отображение на кассете
+                    updateCassetteLabel(songTitle) // Обновляем отображение кассеты
                 } catch (e: Exception) {
                     e.printStackTrace()
                     Toast.makeText(this, "Ошибка при выборе песни", Toast.LENGTH_SHORT).show()
@@ -376,29 +388,20 @@ class MainActivity : AppCompatActivity() {
 
     private fun playSong(songPath: String) {
         try {
-            if (!::mediaPlayer.isInitialized) {
-                mediaPlayer = MediaPlayer() // Создаём MediaPlayer, если он не существует
+            if (!::mediaPlayer.isInitialized || currentSongPath.isNullOrEmpty()) {
+                Toast.makeText(this, "Сначала выберите песню", Toast.LENGTH_SHORT).show()
+                return
             }
 
-            mediaPlayer.reset() // Сбрасываем MediaPlayer перед воспроизведением новой песни
-
-            if (songPath.startsWith("android.resource://")) {
-                // Если песня из ресурсов приложения
-                val uri = Uri.parse(songPath)
-                val afd = contentResolver.openAssetFileDescriptor(uri, "r")!!
-                mediaPlayer.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                afd.close()
+            if (!mediaPlayer.isPlaying) {
+                // Всегда запускаем воспроизведение с начала, если новая песня
+                mediaPlayer.seekTo(0)
+                mediaPlayer.start() // Запускаем воспроизведение
+                startCassetteAnimation() // Запуск анимации
+                isPaused = false
             } else {
-                // Если песня — внешний файл
-                mediaPlayer.setDataSource(songPath)
+                Toast.makeText(this, "Песня уже воспроизводится", Toast.LENGTH_SHORT).show()
             }
-
-            mediaPlayer.prepare()
-            mediaPlayer.start()
-
-            startCassetteAnimation()  // Запуск анимации
-            isPaused = false
-            pausePosition = 0
         } catch (e: Exception) {
             e.printStackTrace()
             Toast.makeText(this, "Не удалось воспроизвести песню", Toast.LENGTH_SHORT).show()
