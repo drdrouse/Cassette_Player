@@ -44,6 +44,9 @@ class SongSelectionActivity : AppCompatActivity() {
             Pair("Metallica - Nothing Else Matters", "android.resource://${packageName}/${R.raw.song5}"),
             Pair("Alice Cooper - Poison", "android.resource://${packageName}/${R.raw.song6}"),
             Pair("The Animals - House Of Rising Sun", "android.resource://${packageName}/${R.raw.song7}"),
+            Pair("The Beatles - Help", "android.resource://${packageName}/${R.raw.song8}"),
+            Pair("Queen - Bohemian Rhapsody", "android.resource://${packageName}/${R.raw.song9}"),
+            Pair("Sex Pistols - God Save The Queen", "android.resource://${packageName}/${R.raw.song10}"),
         )
 
         // Формируем списки для отображения
