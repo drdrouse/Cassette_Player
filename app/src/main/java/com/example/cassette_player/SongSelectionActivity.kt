@@ -52,6 +52,12 @@ class SongSelectionActivity : AppCompatActivity() {
             Pair("Blur - Song 2", "android.resource://${packageName}/${R.raw.song13}"),
             Pair("Guns N' Roses - Welcome To The Jungle", "android.resource://${packageName}/${R.raw.song14}"),
             Pair("Black Sabbath - Paranoid", "android.resource://${packageName}/${R.raw.song15}"),
+            Pair("Queen - We Will Rock You", "android.resource://${packageName}/${R.raw.song16}"),
+            Pair("Nirvana - Smells Like Teen Spirit", "android.resource://${packageName}/${R.raw.song17}"),
+            Pair("George Thorogood - Bad To The Bone", "android.resource://${packageName}/${R.raw.song18}"),
+            Pair("AC/DC - Thunderstruck", "android.resource://${packageName}/${R.raw.song19}"),
+            Pair("Limp Bizkit - Take A Look Around", "android.resource://${packageName}/${R.raw.song20}"),
+            Pair("Linkin Park - Numb", "android.resource://${packageName}/${R.raw.song21}"),
         )
 
         // Формируем списки для отображения
