@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.AnimationDrawable
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -47,7 +48,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        checkAndRequestPermissions()
         // Полноэкранный режим
         window.decorView.systemUiVisibility = (
                 View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -113,42 +113,6 @@ class MainActivity : AppCompatActivity() {
         val rewindForwardButton = findViewById<ImageButton>(R.id.rewind_forward_button)
         rewindForwardButton.setOnTouchListener { _, event ->
             handleRewindForwardTouchEvent(event, rewindForwardSound, rewindForwardButton)
-        }
-    }
-
-    private fun checkAndRequestPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            val permissions = mutableListOf<String>()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                permissions.add(android.Manifest.permission.READ_MEDIA_AUDIO)
-            } else {
-                permissions.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
-
-            // Проверяем разрешения
-            if (permissions.any { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }) {
-                requestPermissions(permissions.toTypedArray(), REQUEST_CODE_READ_EXTERNAL_STORAGE)
-            }
-        } else {
-            // Для Android ниже M (6.0), разрешения даются при установке
-            // Открытие активности для выбора песни без дополнительного запроса
-            openSongSelectionActivity()
-        }
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQUEST_CODE_READ_EXTERNAL_STORAGE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Разрешение получено, теперь можно переходить к выбору песни
-                // Не открываем SongSelectionActivity автоматически, только по кнопке
-            } else {
-                Toast.makeText(this, "Разрешение на доступ к аудиофайлам не предоставлено", Toast.LENGTH_SHORT).show()
-            }
         }
     }
 
@@ -381,15 +345,47 @@ class MainActivity : AppCompatActivity() {
             val songTitle = data?.getStringExtra("song_title")  // Получаем название песни
 
             if (!songPath.isNullOrEmpty() && !songTitle.isNullOrEmpty()) {
-                // Остановить текущую песню и сбросить триггеры
-                stopSong()                 // Останавливаем текущую песню, если играет
-                isPaused = false           // Сбрасываем флаг паузы
-                pausePosition = 0          // Сбрасываем позицию
+                try {
+                    // Полностью сбрасываем MediaPlayer
+                    if (::mediaPlayer.isInitialized) {
+                        mediaPlayer.stop()      // Останавливаем текущую песню
+                        mediaPlayer.reset()     // Сбрасываем состояние MediaPlayer
+                        mediaPlayer.release()   // Освобождаем ресурсы MediaPlayer
+                    }
 
-                currentSongPath = songPath // Устанавливаем новый путь
-                updateCassetteLabel(songTitle) // Обновляем название на кассете
+                    // Создаем новый экземпляр MediaPlayer
+                    mediaPlayer = MediaPlayer()
+
+                    // Устанавливаем новый источник данных
+                    if (songPath.startsWith("android.resource://")) {
+                        val uri = Uri.parse(songPath)
+                        val afd = contentResolver.openAssetFileDescriptor(uri, "r")!!
+                        mediaPlayer.setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                        afd.close()
+                    } else {
+                        mediaPlayer.setDataSource(songPath)
+                    }
+
+                    mediaPlayer.prepare() // Подготавливаем MediaPlayer
+
+                    // Обновляем текущие данные
+                    currentSongPath = songPath
+                    currentSongTitle = songTitle
+                    updateCassetteLabel(songTitle)
+
+                    // Останавливаем анимацию кассеты
+                    stopCassetteAnimation()
+
+                    // Сбрасываем статус проигрывания
+                    isPaused = false
+                    pausePosition = 0
+
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "Ошибка при выборе песни", Toast.LENGTH_SHORT).show()
+                }
             } else {
-                Toast.makeText(this, "Путь к файлу или название не найдено", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Ошибка: Песня не выбрана", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -405,22 +401,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun playSong(songPath: String) {
         try {
-            if (::mediaPlayer.isInitialized) {
-                mediaPlayer.reset() // Сбрасываем MediaPlayer для новой песни
-            } else {
-                mediaPlayer = MediaPlayer()
+            if (!::mediaPlayer.isInitialized || currentSongPath.isNullOrEmpty()) {
+                Toast.makeText(this, "Сначала выберите песню", Toast.LENGTH_SHORT).show()
+                return
             }
 
-            mediaPlayer.setDataSource(songPath)
-            mediaPlayer.prepare()
-            mediaPlayer.start()
-
-            startCassetteAnimation() // Запускаем анимацию кассеты при воспроизведении
-            isPaused = false         // Сбрасываем флаг паузы
-            pausePosition = 0        // Обнуляем позицию для новой песни
+            if (!mediaPlayer.isPlaying) {
+                mediaPlayer.seekTo(0) // Устанавливаем позицию на начало
+                mediaPlayer.start()  // Запускаем воспроизведение
+                startCassetteAnimation() // Запуск анимации
+                isPaused = false
+            } else {
+                Toast.makeText(this, "Песня уже воспроизводится", Toast.LENGTH_SHORT).show()
+            }
         } catch (e: Exception) {
             e.printStackTrace()
-            Toast.makeText(this, "Ошибка при воспроизведении песни", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Не удалось воспроизвести песню", Toast.LENGTH_SHORT).show()
         }
     }
 
