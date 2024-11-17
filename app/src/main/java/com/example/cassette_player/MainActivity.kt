@@ -1,6 +1,9 @@
 package com.example.cassette_player
 
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.AnimationDrawable
@@ -18,6 +21,7 @@ import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,6 +45,8 @@ class MainActivity : AppCompatActivity() {
     private var showedToastForNoSong = false // Флаг для уведомления
     private val rewindInterval = 2000 // Интервал перемотки назад (2 секунды)
     private val rewindHandler = Handler(Looper.getMainLooper())
+    private lateinit var notificationManager: NotificationManager
+
     // Настройки скоростей анимации
     private val normalFrameDelay = 30L   // Ускоренная обычная скорость
     private val fastFrameDelay = 15L     // Более быстрая скорость для перемотки
@@ -48,6 +54,16 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        createNotificationChannel() // Создаём канал уведомлений
+        // Проверка и запрос разрешения для Android 13+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission("android.permission.POST_NOTIFICATIONS") != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf("android.permission.POST_NOTIFICATIONS"), 101)
+            }
+        }
+
         // Полноэкранный режим
         window.decorView.systemUiVisibility = (
                 View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -399,6 +415,9 @@ class MainActivity : AppCompatActivity() {
                 mediaPlayer.start() // Запускаем воспроизведение
                 startCassetteAnimation() // Запуск анимации
                 isPaused = false
+
+                // Показать уведомление с названием песни
+                showSongNotification(currentSongTitle ?: "Неизвестная песня")
             } else {
                 Toast.makeText(this, "Песня уже воспроизводится", Toast.LENGTH_SHORT).show()
             }
@@ -424,4 +443,45 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 101) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(this, "Разрешение на уведомления предоставлено", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Разрешение на уведомления отклонено", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "MUSIC_CHANNEL", // Уникальный ID канала
+                "Музыкальные уведомления", // Имя канала (видно пользователю)
+                NotificationManager.IMPORTANCE_LOW // Важность канала
+            ).apply {
+                description = "Канал для отображения текущей песни"
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+    }
+
+    private fun showSongNotification(songTitle: String) {
+        val builder = NotificationCompat.Builder(this, "MUSIC_CHANNEL")
+            .setSmallIcon(R.drawable.logo) // Иконка уведомления
+            .setContentTitle("Сейчас играет") // Заголовок
+            .setContentText(songTitle) // Название песни
+            .setPriority(NotificationCompat.PRIORITY_LOW) // Низкий приоритет
+            .setOngoing(true) // Уведомление нельзя убрать свайпом
+
+        notificationManager.notify(1, builder.build()) // Показываем уведомление
+    }
+
+
 }
