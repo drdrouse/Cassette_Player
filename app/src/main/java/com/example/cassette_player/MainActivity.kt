@@ -346,14 +346,17 @@ class MainActivity : AppCompatActivity() {
 
             if (!songPath.isNullOrEmpty() && !songTitle.isNullOrEmpty()) {
                 try {
-                    stopSong() // Останавливаем текущую песню, если она играет
-                    if (!::mediaPlayer.isInitialized) {
-                        mediaPlayer = MediaPlayer() // Создаём новый экземпляр MediaPlayer, если он не существует
+                    // Полностью сбрасываем MediaPlayer
+                    if (::mediaPlayer.isInitialized) {
+                        mediaPlayer.stop()      // Останавливаем текущую песню
+                        mediaPlayer.reset()     // Сбрасываем состояние MediaPlayer
+                        mediaPlayer.release()   // Освобождаем ресурсы MediaPlayer
                     }
 
-                    mediaPlayer.reset() // Сбрасываем MediaPlayer перед загрузкой новой песни
+                    // Создаем новый экземпляр MediaPlayer
+                    mediaPlayer = MediaPlayer()
 
-                    // Устанавливаем данные для новой песни
+                    // Устанавливаем новый источник данных
                     if (songPath.startsWith("android.resource://")) {
                         val uri = Uri.parse(songPath)
                         val afd = contentResolver.openAssetFileDescriptor(uri, "r")!!
@@ -363,10 +366,20 @@ class MainActivity : AppCompatActivity() {
                         mediaPlayer.setDataSource(songPath)
                     }
 
-                    mediaPlayer.prepare() // Предварительно подготавливаем песню, но не запускаем
+                    mediaPlayer.prepare() // Подготавливаем MediaPlayer
+
+                    // Обновляем текущие данные
                     currentSongPath = songPath
                     currentSongTitle = songTitle
-                    updateCassetteLabel(songTitle) // Обновляем отображение кассеты
+                    updateCassetteLabel(songTitle)
+
+                    // Останавливаем анимацию кассеты
+                    stopCassetteAnimation()
+
+                    // Сбрасываем статус проигрывания
+                    isPaused = false
+                    pausePosition = 0
+
                 } catch (e: Exception) {
                     e.printStackTrace()
                     Toast.makeText(this, "Ошибка при выборе песни", Toast.LENGTH_SHORT).show()
@@ -394,9 +407,8 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (!mediaPlayer.isPlaying) {
-                // Всегда запускаем воспроизведение с начала, если новая песня
-                mediaPlayer.seekTo(0)
-                mediaPlayer.start() // Запускаем воспроизведение
+                mediaPlayer.seekTo(0) // Устанавливаем позицию на начало
+                mediaPlayer.start()  // Запускаем воспроизведение
                 startCassetteAnimation() // Запуск анимации
                 isPaused = false
             } else {
