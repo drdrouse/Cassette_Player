@@ -345,10 +345,20 @@ class MainActivity : AppCompatActivity() {
             val songTitle = data?.getStringExtra("song_title")  // Получаем название песни
 
             if (!songPath.isNullOrEmpty() && !songTitle.isNullOrEmpty()) {
-                stopSong()  // Останавливаем текущую песню, если играет
-                currentSongPath = songPath
-                currentSongTitle = songTitle
-                updateCassetteLabel(songTitle)  // Обновляем отображение на кассете
+                try {
+                    stopSong()  // Останавливаем текущую песню, если она играет
+                    if (!::mediaPlayer.isInitialized) {
+                        mediaPlayer = MediaPlayer() // Создаём новый экземпляр, если он не существует
+                    }
+                    mediaPlayer.reset() // Сбрасываем MediaPlayer перед выбором новой песни
+
+                    currentSongPath = songPath
+                    currentSongTitle = songTitle
+                    updateCassetteLabel(songTitle)  // Обновляем отображение на кассете
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(this, "Ошибка при выборе песни", Toast.LENGTH_SHORT).show()
+                }
             } else {
                 Toast.makeText(this, "Ошибка: Песня не выбрана", Toast.LENGTH_SHORT).show()
             }
@@ -366,11 +376,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun playSong(songPath: String) {
         try {
-            if (::mediaPlayer.isInitialized) {
-                mediaPlayer.reset() // Сбрасываем MediaPlayer перед воспроизведением новой песни
-            } else {
-                mediaPlayer = MediaPlayer()
+            if (!::mediaPlayer.isInitialized) {
+                mediaPlayer = MediaPlayer() // Создаём MediaPlayer, если он не существует
             }
+
+            mediaPlayer.reset() // Сбрасываем MediaPlayer перед воспроизведением новой песни
 
             if (songPath.startsWith("android.resource://")) {
                 // Если песня из ресурсов приложения
